@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Nutricional Felina Completa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #FFF7ED; /* Orange-50 */
+        }
+
+        .cat-card {
+            transition: transform 0.2s;
+        }
+        
+        .cat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #F97316;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Navbar -->
+    <nav class="bg-orange-500 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-cat text-2xl"></i>
+                <h1 class="text-xl font-bold">NutriGato Pro</h1>
+            </div>
+            <div class="text-sm hidden md:block">Calculadora de Alimentación & Edad</div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Inputs -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Intro Card -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-orange-100">
+                <h2 class="text-2xl font-bold text-orange-600 mb-2">Datos del Michi</h2>
+                <p class="text-gray-600 mb-4">Ingresa los datos para calcular la porción exacta y su edad humana.</p>
+
+                <!-- Unit Toggle -->
+                <div class="flex justify-end mb-4">
+                    <div class="bg-orange-100 p-1 rounded-lg flex text-sm font-semibold">
+                        <button id="btn-kg" onclick="setUnit('kg')" class="px-4 py-1 rounded-md bg-white text-orange-600 shadow-sm transition-all">Kg</button>
+                        <button id="btn-lbs" onclick="setUnit('lbs')" class="px-4 py-1 rounded-md text-gray-500 hover:text-orange-600 transition-all">Lbs</button>
+                    </div>
+                </div>
+
+                <form id="catForm" class="space-y-6" onsubmit="return false;">
+                    <!-- Weight -->
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2 flex items-center gap-2">
+                            <i class="fas fa-weight-hanging text-orange-400"></i> Peso Actual
+                        </label>
+                        <div class="flex items-center gap-4">
+                            <input type="number" id="weight" step="0.1" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:outline-none" placeholder="Ej: 4.5">
+                            <span id="weight-unit" class="font-bold text-gray-500">kg</span>
+                        </div>
+                    </div>
+
+                    <!-- Age Category -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-bold mb-2 flex items-center gap-2">
+                                <i class="fas fa-birthday-cake text-orange-400"></i> Etapa de Vida
+                            </label>
+                            <select id="lifeStage" onchange="updateMultipliers()" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:outline-none bg-white">
+                                <option value="kitten_wean">Gatito Destete (< 4 meses)</option>
+                                <option value="kitten_grow">Gatito Crecimiento (4-12 meses)</option>
+                                <option value="adult_neutered" selected>Adulto (Esterilizado/Interior)</option>
+                                <option value="adult_active">Adulto (Activo/Sin Esterilizar)</option>
+                                <option value="senior">Senior / Abuelito (> 10 años)</option>
+                                <option value="weight_loss">Necesita perder peso</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-bold mb-2 flex items-center gap-2">
+                                <i class="fas fa-hourglass-half text-orange-400"></i> Edad Exacta (Años)
+                            </label>
+                            <input type="number" id="ageYears" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:outline-none" placeholder="Ej: 3" value="3">
+                        </div>
+                    </div>
+
+                    <!-- Food Info -->
+                    <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                        <label class="block text-gray-800 font-bold mb-2 flex items-center gap-2">
+                            <i class="fas fa-bowl-food text-orange-400"></i> Calorías de tu comida (kcal/kg)
+                            <span class="text-xs font-normal text-gray-500 bg-white px-2 py-0.5 rounded-full border">Ver reverso del empaque</span>
+                        </label>
+                        
+                        <div class="flex flex-col gap-3">
+                            <input type="number" id="caloriesPerKg" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:outline-none" placeholder="Ej: 3600">
+                            
+                            <!-- Presets -->
+                            <div class="text-sm text-gray-600 flex flex-wrap gap-2 items-center">
+                                <span>¿No lo encuentras? Usa promedios:</span>
+                                <button onclick="setCalories(3600)" class="bg-white border hover:bg-orange-100 px-3 py-1 rounded-full transition text-xs">Pienso Seco Estándar</button>
+                                <button onclick="setCalories(4000)" class="bg-white border hover:bg-orange-100 px-3 py-1 rounded-full transition text-xs">Alta Energía / Kitten</button>
+                                <button onclick="setCalories(3200)" class="bg-white border hover:bg-orange-100 px-3 py-1 rounded-full transition text-xs">Light / Esterilizado</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="calculate()" class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95 text-lg">
+                        <i class="fas fa-calculator mr-2"></i> Calcular Ración
+                    </button>
+                </form>
+            </div>
+
+            <!-- Explanation Section -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100">
+                <h3 class="text-xl font-bold text-blue-600 mb-4"><i class="fas fa-book-open mr-2"></i> ¿Cómo funciona esto?</h3>
+                <div class="space-y-4 text-sm text-gray-600">
+                    <p>
+                        <strong>1. RER (Requerimiento de Energía en Reposo):</strong> 
+                        Calculamos cuántas calorías quema tu gato solo por existir (respirar, latidos, digestión). Usamos la fórmula veterinaria: <code class="bg-gray-100 px-1 rounded">70 × (Peso en kg) ^ 0.75</code>.
+                    </p>
+                    <p>
+                        <strong>2. Factor de Actividad:</strong> 
+                        Multiplicamos el RER según su estilo de vida. Un gatito bebé necesita el triple de energía que un abuelito durmiente.
+                    </p>
+                    <p>
+                        <strong>3. Edad Humana:</strong> 
+                        Los gatos no envejecen linealmente. El primer año equivale a 15 humanos, el segundo a 9 más, y luego cada año gato son aproximadamente 4 años humanos.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Results -->
+        <div class="lg:col-span-1 space-y-6">
+            
+            <!-- Result Card -->
+            <div id="resultCard" class="hidden bg-gradient-to-b from-gray-800 to-gray-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
+                <!-- Decorative background elements -->
+                <div class="absolute top-0 right-0 -mt-4 -mr-4 text-gray-700 opacity-20 transform rotate-12">
+                    <i class="fas fa-paw text-9xl"></i>
+                </div>
+
+                <div class="relative z-10 text-center">
+                    <h3 class="text-orange-400 uppercase tracking-widest text-sm font-bold mb-6">Resultados Diarios</h3>
+                    
+                    <!-- Calories -->
+                    <div class="mb-8">
+                        <span class="text-gray-400 text-sm block mb-1">Necesidad Calórica</span>
+                        <div class="text-5xl font-bold text-white mb-2">
+                            <span id="res-calories">0</span> <span class="text-2xl text-gray-400">kcal</span>
+                        </div>
+                    </div>
+
+                    <div class="h-px bg-gray-700 w-full mb-8"></div>
+
+                    <!-- Grams of Food -->
+                    <div class="mb-8">
+                        <span class="text-gray-400 text-sm block mb-1">Cantidad de Comida</span>
+                        <div class="text-5xl font-bold text-green-400 mb-2">
+                            <span id="res-grams">0</span> <span class="text-2xl text-gray-400">g</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">Repartir en 2 o 3 tomas al día</p>
+                    </div>
+
+                     <!-- Human Age -->
+                     <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                        <span class="text-gray-400 text-xs block mb-1">Edad Humana Equivalente</span>
+                        <div class="text-2xl font-bold text-blue-300">
+                            <span id="res-human-age">0</span> Años
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Treat Limit -->
+            <div id="treatsInfo" class="hidden bg-yellow-50 p-5 rounded-2xl border border-yellow-200">
+                <h4 class="font-bold text-yellow-800 flex items-center gap-2">
+                    <i class="fas fa-cookie-bite"></i> Zona de Premios
+                </h4>
+                <p class="text-sm text-yellow-700 mt-2">
+                    Los premios no deben superar el 10% de las calorías totales.
+                </p>
+                <div class="mt-3 font-bold text-yellow-900 text-lg">
+                    Máx: <span id="res-treats">0</span> kcal/día
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="bg-white p-8 rounded-2xl border-2 border-dashed border-gray-300 text-center h-full flex flex-col justify-center items-center opacity-75">
+                <i class="fas fa-calculator text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">Completa el formulario para ver la magia nutricional.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-12 py-6 border-t border-gray-100">
+        <div class="container mx-auto text-center text-gray-500 text-sm">
+            <p>Hecho con <i class="fas fa-heart text-red-400"></i> para los gatos.</p>
+            <p class="mt-2 text-xs text-gray-400">Nota: Esta herramienta es una guía. Siempre consulta a tu veterinario para dietas específicas, especialmente si tu gato tiene condiciones médicas.</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentUnit = 'kg';
+
+        function setUnit(unit) {
+            currentUnit = unit;
+            const btnKg = document.getElementById('btn-kg');
+            const btnLbs = document.getElementById('btn-lbs');
+            const label = document.getElementById('weight-unit');
+            const weightInput = document.getElementById('weight');
+
+            if (unit === 'kg') {
+                btnKg.className = "px-4 py-1 rounded-md bg-white text-orange-600 shadow-sm transition-all border border-orange-100";
+                btnLbs.className = "px-4 py-1 rounded-md text-gray-500 hover:text-orange-600 transition-all";
+                label.innerText = 'kg';
+                // Convert value if exists
+                if(weightInput.value) weightInput.value = (parseFloat(weightInput.value) / 2.20462).toFixed(1);
+            } else {
+                btnLbs.className = "px-4 py-1 rounded-md bg-white text-orange-600 shadow-sm transition-all border border-orange-100";
+                btnKg.className = "px-4 py-1 rounded-md text-gray-500 hover:text-orange-600 transition-all";
+                label.innerText = 'lbs';
+                // Convert value if exists
+                if(weightInput.value) weightInput.value = (parseFloat(weightInput.value) * 2.20462).toFixed(1);
+            }
+        }
+
+        function setCalories(amount) {
+            document.getElementById('caloriesPerKg').value = amount;
+            // Add a little highlight effect
+            const input = document.getElementById('caloriesPerKg');
+            input.classList.add('bg-orange-50');
+            setTimeout(() => input.classList.remove('bg-orange-50'), 300);
+        }
+
+        function updateMultipliers() {
+            // Logic to auto-suggest calorie density could go here if we wanted to be fancy
+        }
+
+        function calculateHumanAge(catYears) {
+            if (catYears < 1) {
+                // Approximate for months
+                return "1-10 (Bebé/Niño)";
+            } else if (catYears === 1) {
+                return 15;
+            } else if (catYears === 2) {
+                return 24;
+            } else {
+                return 24 + ((catYears - 2) * 4);
+            }
+        }
+
+        function calculate() {
+            // 1. Get Inputs
+            let weight = parseFloat(document.getElementById('weight').value);
+            const ageYears = parseFloat(document.getElementById('ageYears').value);
+            const lifeStage = document.getElementById('lifeStage').value;
+            const foodCalories = parseFloat(document.getElementById('caloriesPerKg').value);
+
+            // Validation
+            if (!weight || !foodCalories) {
+                alert("Por favor ingresa el peso y las calorías de la comida.");
+                return;
+            }
+
+            // 2. Convert to KG for calculation if needed
+            let weightInKg = currentUnit === 'lbs' ? weight / 2.20462 : weight;
+
+            // 3. Calculate RER (Resting Energy Requirement)
+            // Formula: 70 * (weight_kg ^ 0.75)
+            const RER = 70 * Math.pow(weightInKg, 0.75);
+
+            // 4. Select Multiplier (DER Factor)
+            let factor = 1.2; // Default (Neutered Adult)
+
+            switch(lifeStage) {
+                case 'kitten_wean': factor = 3.0; break; // High energy needs
+                case 'kitten_grow': factor = 2.0; break; // Growing
+                case 'adult_neutered': factor = 1.2; break; // Standard house cat
+                case 'adult_active': factor = 1.4; break; // Outdoor or very active
+                case 'senior': factor = 1.1; break; // Metabolism slows down
+                case 'weight_loss': factor = 0.8; break; // Caloric deficit
+            }
+
+            // 5. Calculate Daily Calories (DER)
+            const dailyCalories = RER * factor;
+
+            // 6. Calculate Food Amount in Grams
+            // (DailyCalories / FoodKcalPerKg) * 1000
+            const dailyGrams = (dailyCalories / foodCalories) * 1000;
+
+            // 7. Calculate Human Age
+            const humanAge = calculateHumanAge(ageYears);
+
+            // 8. Display Results
+            document.getElementById('res-calories').innerText = Math.round(dailyCalories);
+            document.getElementById('res-grams').innerText = Math.round(dailyGrams);
+            document.getElementById('res-human-age').innerText = humanAge;
+            document.getElementById('res-treats').innerText = Math.round(dailyCalories * 0.1);
+
+            // UI Toggle
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('resultCard').classList.remove('hidden');
+            document.getElementById('treatsInfo').classList.remove('hidden');
+
+            // Scroll on mobile
+            if(window.innerWidth < 1024) {
+                document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    </script>
+</body>
+</html>
